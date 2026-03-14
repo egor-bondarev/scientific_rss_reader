@@ -19,33 +19,48 @@ jobs:
           NAME: ${{ github.event.release.name }}
           URL: ${{ github.event.release.html_url }}
           REPO: ${{ github.repository }}
+        shell: bash
         run: |
           set -euo pipefail
+          python - <<'PY'
+          import os, html, json, urllib.request, urllib.parse
 
-          if [ -z "${TELEGRAM_BOT_TOKEN}" ] || [ -z "${TELEGRAM_CHAT_ID}" ]; then
-            echo "Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID secrets"
-            exit 1
-          fi
+          token = os.environ["TELEGRAM_BOT_TOKEN"]
+          chat_id = os.environ["TELEGRAM_CHAT_ID"]
 
-          # Minimal HTML escaping
-          esc() {
-            printf '%s' "$1" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
-          }
+          tag = os.environ.get("TAG", "")
+          name = os.environ.get("NAME") or f"Release {tag}"
+          url = os.environ.get("URL", "")
+          repo = os.environ.get("REPO", "")
 
-          TAG_ESC="$(esc "${TAG}")"
-          NAME_ESC="$(esc "${NAME:-Release ${TAG}}")"
-          REPO_ESC="$(esc "${REPO}")"
-          URL_ESC="$(esc "${URL}")"
+          text = (
+              "<b>🚀 New release</b>\n"
+              f"<b>Repo:</b> {html.escape(repo)}\n"
+              f"<b>Tag:</b> {html.escape(tag)}\n"
+              f"<b>Name:</b> {html.escape(name)}\n"
+              f"<a href=\"{html.escape(url)}\">Open release</a>"
+          )
 
-          TEXT="<b>🚀 New release</b>
-                <b>Repo:</b> ${REPO_ESC}
-                <b>Tag:</b> ${TAG_ESC}
-                <b>Name:</b> ${NAME_ESC}
-                <a href=\"${URL_ESC}\">Open release</a>"
+          data = urllib.parse.urlencode(
+              {
+                  "chat_id": chat_id,
+                  "text": text,
+                  "parse_mode": "HTML",
+                  "disable_web_page_preview": "false",
+              }
+          ).encode("utf-8")
 
-          curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-            -d "chat_id=${TELEGRAM_CHAT_ID}" \
-            -d "text=${TEXT}" \
-            -d "parse_mode=HTML" \
-            -d "disable_web_page_preview=false" \
-            | grep -q '"ok":true'
+          req = urllib.request.Request(
+              f"https://api.telegram.org/bot{token}/sendMessage",
+              data=data,
+              method="POST",
+          )
+
+          with urllib.request.urlopen(req, timeout=30) as resp:
+              body = resp.read().decode("utf-8")
+              js = json.loads(body)
+              if not js.get("ok"):
+                  raise SystemExit(body)
+
+          print("Telegram notified")
+          PY
