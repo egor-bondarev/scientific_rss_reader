@@ -1,6 +1,7 @@
 name: Telegram on Release
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
@@ -24,15 +25,12 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           import os, html, json, urllib.request, urllib.parse
-
           token = os.environ["TELEGRAM_BOT_TOKEN"]
           chat_id = os.environ["TELEGRAM_CHAT_ID"]
-
           tag = os.environ.get("TAG", "")
           name = os.environ.get("NAME") or f"Release {tag}"
           url = os.environ.get("URL", "")
           repo = os.environ.get("REPO", "")
-
           text = (
               "<b>🚀 New release</b>\n"
               f"<b>Repo:</b> {html.escape(repo)}\n"
@@ -40,27 +38,21 @@ jobs:
               f"<b>Name:</b> {html.escape(name)}\n"
               f"<a href=\"{html.escape(url)}\">Open release</a>"
           )
-
-          data = urllib.parse.urlencode(
-              {
-                  "chat_id": chat_id,
-                  "text": text,
-                  "parse_mode": "HTML",
-                  "disable_web_page_preview": "false",
-              }
-          ).encode("utf-8")
-
+          data = urllib.parse.urlencode({
+              "chat_id": chat_id,
+              "text": text,
+              "parse_mode": "HTML",
+              "disable_web_page_preview": "false",
+          }).encode("utf-8")
           req = urllib.request.Request(
               f"https://api.telegram.org/bot{token}/sendMessage",
               data=data,
               method="POST",
           )
-
           with urllib.request.urlopen(req, timeout=30) as resp:
               body = resp.read().decode("utf-8")
               js = json.loads(body)
               if not js.get("ok"):
                   raise SystemExit(body)
-
           print("Telegram notified")
           PY
