@@ -1,0 +1,7 @@
+.env
+venv/
+.venv/
+__pycache__/
+*.pyc
+sent_items.sqlite3
+uv.lock
