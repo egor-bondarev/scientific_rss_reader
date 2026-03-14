@@ -38,10 +38,10 @@ jobs:
           URL_ESC="$(esc "${URL}")"
 
           TEXT="<b>🚀 New release</b>
-<b>Repo:</b> ${REPO_ESC}
-<b>Tag:</b> ${TAG_ESC}
-<b>Name:</b> ${NAME_ESC}
-<a href=\"${URL_ESC}\">Open release</a>"
+                <b>Repo:</b> ${REPO_ESC}
+                <b>Tag:</b> ${TAG_ESC}
+                <b>Name:</b> ${NAME_ESC}
+                <a href=\"${URL_ESC}\">Open release</a>"
 
           curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d "chat_id=${TELEGRAM_CHAT_ID}" \
