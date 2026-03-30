@@ -9,6 +9,26 @@ permissions:
   contents: read
 
 jobs:
+  trigger-gitlab:
+    name: Trigger GitLab SDK Matrix pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract version from tag
+        id: version
+        # Strips leading "v" if present: v4.3.0 → 4.3.0
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger GitLab pipeline
+        run: |
+          curl --fail --silent --show-error \
+            --request POST \
+            "${{ secrets.GITLAB_URL }}/api/v4/projects/${{ secrets.GITLAB_PROJECT_ID }}/trigger/pipeline" \
+            --form "token=${{ secrets.GITLAB_TRIGGER_TOKEN }}" \
+            --form "ref=sdk-matrix-plugin" \
+            --form "variables[TRIGGER]=SDK_MATRIX" \
+            --form "variables[SDK_PLATFORM]=iOS" \
+            --form "variables[SDK_VERSION]=${{ github.event.release.name }}"
+
   notify-telegram:
     runs-on: ubuntu-latest
     steps:
