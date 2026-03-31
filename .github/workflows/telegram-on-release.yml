@@ -24,7 +24,7 @@ jobs:
             --request POST \
             "${{ secrets.GITLAB_URL }}/api/v4/projects/${{ secrets.GITLAB_PROJECT_ID }}/trigger/pipeline" \
             --form "token=${{ secrets.GITLAB_TRIGGER_TOKEN }}" \
-            --form "ref=sdk-matrix-auto-mr" \
+            --form "ref=sdk-matrix-demo" \
             --form "variables[TRIGGER]=SDK_MATRIX" \
             --form "variables[SDK_PLATFORM]=iOS" \
             --form "variables[SDK_VERSION]=${{ github.event.release.name }}"
